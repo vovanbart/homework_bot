@@ -71,7 +71,7 @@ def check_response(response):
     """Проверка."""
     hws = response.get('homeworks')
     if hws is None:
-        raise KeyError('no hw') 
+        raise KeyError('no hw')
     if type(hws) == list and len(hws) > 0:
         status = parse_status(hws[0])
         return status
