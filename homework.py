@@ -2,6 +2,7 @@ import os
 import time
 import requests
 import logging
+from requests.exceptions import RequestException
 import telegram
 from dotenv import load_dotenv
 
@@ -34,7 +35,7 @@ def send_message(bot, message):
     try:
         return bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
     except requests.ConnectionError as e:
-        logging.info(e)
+        logging.error(e, exc_inf=True)
 
 
 def get_api_answer(url, current_timestamp):
@@ -44,11 +45,14 @@ def get_api_answer(url, current_timestamp):
     try:
         homework_statuses = requests.get(url, headers=headers, params=payload)
     except requests.ConnectionError as e:
-        logging.info(e)
+        logging.error(e, exc_inf=True)
     if homework_statuses.status_code != 200:
         raise Exception('invalid response')
     logging.info('server respond')
-    return homework_statuses.json()
+    try:
+        return homework_statuses.json()
+    except RequestException:
+        return {}
 
 
 def parse_status(homework):
@@ -67,16 +71,14 @@ def check_response(response):
     """Проверка."""
     hws = response.get('homeworks')
     if hws is None:
-        raise Exception('No homeworks')
-    if type(hws) != list and len(hws) == 0:
-        raise Exception('Wrong type of homework')
-    for hw in hws:
-        status = hw.get('status')
-        if status in HOMEWORK_STATUSES:
-            return hw
-        else:
-            raise Exception('no such status')
-    return hws
+        raise KeyError('no hw') 
+    if type(hws) == list and len(hws) > 0:
+        status = parse_status(hws[0])
+        return status
+    elif type(hws) == list and len(hws) == 0:
+        return False
+    else:
+        raise TypeError('wrong type hw')
 
 
 def main():
