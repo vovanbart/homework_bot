@@ -17,8 +17,6 @@ PRACTICUM_TOKEN = os.getenv('PRAKTIKUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-current_timestamp = time.time()
-PAYLOAD = {'from_date': current_timestamp}
 
 RETRY_TIME = 300
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
@@ -39,10 +37,10 @@ def send_message(bot, message):
         logging.info(e)
 
 
-def get_api_answer(url):
+def get_api_answer(url, current_timestamp):
     """Получение статуса."""
     headers = HEADERS
-    payload = PAYLOAD
+    payload = {'from_date': current_timestamp}
     try:
         homework_statuses = requests.get(url, headers=headers, params=payload)
     except requests.ConnectionError as e:
@@ -84,9 +82,10 @@ def check_response(response):
 def main():
     """Главная."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    current_timestamp = int(time.time())
     while True:
         try:
-            get_api_answer_result = get_api_answer(ENDPOINT)
+            get_api_answer_result = get_api_answer(ENDPOINT, current_timestamp)
             check_response_result = check_response(get_api_answer_result)
             if check_response_result:
                 for homework in check_response_result:
