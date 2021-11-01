@@ -36,21 +36,21 @@ def send_message(bot, message):
     try:
         return bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
     except requests.ConnectionError as e:
-        logging.info(e) 
+        logging.info(e)
 
 
-def get_api_answer(url): 
-    """Получение статуса.""" 
+def get_api_answer(url):
+    """Получение статуса."""
     headers = HEADERS
     payload = PAYLOAD
     try:
         homework_statuses = requests.get(url, headers=headers, params=payload)
     except requests.ConnectionError as e:
-        logging.info(e) 
-    if homework_statuses.status_code != 200: 
-        raise Exception('invalid response') 
-    logging.info('server respond') 
-    return homework_statuses.json() 
+        logging.info(e)
+    if homework_statuses.status_code != 200:
+        raise Exception('invalid response')
+    logging.info('server respond')
+    return homework_statuses.json()
 
 
 def parse_status(homework):
@@ -84,7 +84,6 @@ def check_response(response):
 def main():
     """Главная."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
     while True:
         try:
             get_api_answer_result = get_api_answer(ENDPOINT)
@@ -94,10 +93,10 @@ def main():
                     parse_status_result = parse_status(homework)
                     send_message(bot, parse_status_result)
             time.sleep(RETRY_TIME)
-        except Exception as error:
+        except Exception as e:
             logging.error('Bot fall')
             bot.send_message(
-                chat_id=TELEGRAM_CHAT_ID, text=f'Сбой в работе программы: {error}'
+                chat_id=TELEGRAM_CHAT_ID, text=f'Сбой в работе программы: {e}'
             )
             time.sleep(RETRY_TIME)
 
