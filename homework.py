@@ -1,3 +1,4 @@
+from json.decoder import JSONDecodeError
 import os
 import time
 import requests
@@ -17,12 +18,12 @@ load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRAKTIKUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
+PRACTICUM_HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 RETRY_TIME = 300
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 
-HOMEWORK_STATUSES = {
+PRACTICUM_HOMEWORK_STATUSES = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена, в ней нашлись ошибки.'
@@ -34,30 +35,30 @@ def send_message(bot, message):
     logging.info(f'message send {message}')
     try:
         return bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-    except requests.ConnectionError as e:
+    except Exception as e:
         logging.error(e, exc_inf=True)
 
 
 def get_api_answer(url, current_timestamp):
     """Получение статуса."""
-    headers = HEADERS
+    headers = PRACTICUM_HEADERS
     payload = {'from_date': current_timestamp}
     try:
         homework_statuses = requests.get(url, headers=headers, params=payload)
-    except requests.ConnectionError as e:
+    except RequestException as e:
         logging.error(e, exc_inf=True)
     if homework_statuses.status_code != 200:
         raise Exception('invalid response')
     logging.info('server respond')
     try:
         return homework_statuses.json()
-    except RequestException:
+    except JSONDecodeError:
         return {}
 
 
 def parse_status(homework):
     """Распознование статуса."""
-    verdict = HOMEWORK_STATUSES[homework.get('status')]
+    verdict = PRACTICUM_HOMEWORK_STATUSES[homework.get('status')]
     homework_name = homework.get('homework_name')
     if homework_name is None:
         raise Exception('No homework name')
@@ -73,10 +74,9 @@ def check_response(response):
     if hws is None:
         raise KeyError('no hw')
     if type(hws) == list and len(hws) > 0:
-        status = parse_status(hws[0])
-        return status
+        return hws[0]
     elif type(hws) == list and len(hws) == 0:
-        return False
+        return {}
     else:
         raise TypeError('wrong type hw')
 
@@ -90,9 +90,8 @@ def main():
             get_api_answer_result = get_api_answer(ENDPOINT, current_timestamp)
             check_response_result = check_response(get_api_answer_result)
             if check_response_result:
-                for homework in check_response_result:
-                    parse_status_result = parse_status(homework)
-                    send_message(bot, parse_status_result)
+                parse_status_result = parse_status(check_response_result)
+                send_message(bot, parse_status_result)
             time.sleep(RETRY_TIME)
         except Exception as e:
             logging.error('Bot fall')
