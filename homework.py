@@ -71,17 +71,11 @@ def parse_status(homework):
 def check_response(response):
     """Проверка."""
     hws = response.get('homeworks')
-    if hws is None:
-        raise KeyError('no hw')
-    if type(hws) == list and len(hws) > 0:
-        if hws[0].get('statuses') not in PRACTICUM_HOMEWORK_STATUSES:
-            return hws[0]
-        else:
-            raise Exception('Статус неизвестен')
-    elif type(hws) == list and len(hws) == 0:
-        return {}
-    else:
-        raise TypeError('wrong type hw')
+    if not hws:
+        return hws
+    if hws[0].get('status') not in PRACTICUM_HOMEWORK_STATUSES:
+        raise Exception('Статус неизвестен')
+    return hws[0]
 
 
 def main():
