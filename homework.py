@@ -68,11 +68,15 @@ def parse_status(homework):
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
+class EmptyResponse(Exception):
+    pass
+
+
 def check_response(response):
     """Проверка."""
     hws = response.get('homeworks')
     if not hws:
-        raise Exception('Неизвестный формат')
+        raise EmptyResponse
     if hws[0].get('status') not in PRACTICUM_HOMEWORK_STATUSES:
         raise Exception('Статус неизвестен')
     return hws[0]
@@ -90,6 +94,8 @@ def main():
                 parse_status_result = parse_status(check_response_result)
                 send_message(bot, parse_status_result)
             time.sleep(RETRY_TIME)
+        except EmptyResponse:
+            pass
         except Exception as e:
             logging.error('Bot fall')
             bot.send_message(
