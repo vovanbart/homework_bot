@@ -72,7 +72,7 @@ def check_response(response):
     """Проверка."""
     hws = response.get('homeworks')
     if not hws:
-        return hws
+        raise Exception('Неизвестный формат')
     if hws[0].get('status') not in PRACTICUM_HOMEWORK_STATUSES:
         raise Exception('Статус неизвестен')
     return hws[0]
