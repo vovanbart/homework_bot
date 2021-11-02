@@ -74,6 +74,8 @@ def check_response(response):
     if hws is None:
         raise KeyError('no hw')
     if type(hws) == list and len(hws) > 0:
+        if hws[0].get('statuses') not in PRACTICUM_HOMEWORK_STATUSES:
+            raise Exception('Статус неизвестен')
         return hws[0]
     elif type(hws) == list and len(hws) == 0:
         return {}
